@@ -6,6 +6,8 @@
 #include "Processor.h"
 
 #include <QFileDialog>
+#include <QGridLayout>
+#include <QPushButton>
 #include <QMessageBox>
 
 #include <bqaudiostream/AudioReadStreamFactory.h>
@@ -16,6 +18,32 @@ Interface::Interface(Processor *p, QWidget *parent) :
     QMainWindow(parent),
     m_processor(p)
 {
+    auto mainFrame = new QFrame;
+    auto mainLayout = new QGridLayout;
+    mainFrame->setLayout(mainLayout);
+
+    auto open = new QPushButton(tr("Open"));
+    mainLayout->addWidget(open, 0, 0);
+
+    auto rewind = new QPushButton(tr("<<"));
+    mainLayout->addWidget(rewind, 0, 1);
+
+    auto play = new QPushButton(tr(">"));
+    mainLayout->addWidget(play, 0, 2);
+
+    auto pause = new QPushButton(tr("||"));
+    mainLayout->addWidget(pause, 0, 3);
+
+    connect(open, SIGNAL(clicked()), this, SLOT(open()));
+    connect(rewind, SIGNAL(clicked()), this, SLOT(rewind()));
+    connect(play, SIGNAL(clicked()), this, SLOT(play()));
+    connect(pause, SIGNAL(clicked()), this, SLOT(pause()));
+
+    m_filenameLabel = new QLabel;
+    m_filenameLabel->setText(tr("<no file loaded>"));
+    mainLayout->addWidget(m_filenameLabel, 1, 0, 1, 4);
+
+    setCentralWidget(mainFrame);
 }
 
 Interface::~Interface()
@@ -47,11 +75,13 @@ Interface::open(QString filename)
 {
     try {
         m_processor->open(filename);
+        m_filenameLabel->setText(m_processor->getTrackName());
     } catch (const exception &f) {
         QMessageBox::critical
             (this, tr("Failed to open file"),
              tr("Could not open audio file \"%1\": %2")
              .arg(filename).arg(QString::fromUtf8(f.what())));
+        m_filenameLabel->setText(tr("<no file loaded>"));
     }
 }
 

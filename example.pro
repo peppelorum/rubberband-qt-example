@@ -7,9 +7,7 @@ CONFIG += release c++11 object_parallel_to_source
 
 TARGET = "Example"
 
-DEFINES += USE_SPEEX USE_KISSFFT HAVE_PORTAUDIO
-
-LIBS += -lportaudio
+DEFINES += USE_SPEEX USE_KISSFFT
 
 INCLUDEPATH += \
         ext/rubberband \
@@ -65,18 +63,18 @@ BQ_SOURCES += \
         ext/bqaudiostream/src/AudioStreamExceptions.cpp
         
 win32-msvc* {
-    DEFINES += HAVE_MEDIAFOUNDATION _USE_MATH_DEFINES
-    LIBS += -lmfplat -lmfreadwrite -lmfuuid -lpropsys -ladvapi32 -lwinmm -lws2_32
+    DEFINES += HAVE_PORAUDIO HAVE_MEDIAFOUNDATION _USE_MATH_DEFINES
+    LIBS += -lportaudio -lmfplat -lmfreadwrite -lmfuuid -lpropsys -ladvapi32 -lwinmm -lws2_32
 }
 
 macx* {
-    DEFINES += HAVE_COREAUDIO HAVE_VDSP USE_PTHREADS
-    LIBS += -framework CoreAudio -framework CoreMidi -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Accelerate
+    DEFINES += HAVE_COREAUDIO HAVE_PORTAUDIO HAVE_VDSP USE_PTHREADS
+    LIBS += -lportaudio -framework CoreAudio -framework CoreMidi -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Accelerate
 }
 
 linux* {
-    DEFINES += HAVE_SNDFILE USE_PTHREADS
-    LIBS += -lsndfile
+    DEFINES += HAVE_SNDFILE HAVE_LIBPULSE USE_PTHREADS
+    LIBS += -lsndfile -lpulse
 }
 
 for (file, BQ_SOURCES)       { SOURCES += $$file }

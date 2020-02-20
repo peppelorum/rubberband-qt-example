@@ -37,6 +37,7 @@ protected slots:
 private:
     Processor *m_processor;
     QDoubleSpinBox *m_speedSpin;
+    QLabel *m_filenameLabel;
 };
 
 

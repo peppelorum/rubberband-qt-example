@@ -119,6 +119,14 @@ Processor::getFilename() const
     return m_filename;
 }
 
+QString
+Processor::getTrackName() const
+{
+    QMutexLocker locker(&m_mutex);
+    if (m_trackName != "") return m_trackName;
+    else return QFileInfo(m_filename).baseName();
+}
+
 int
 Processor::getSampleRate() const
 {
@@ -345,8 +353,6 @@ Processor::FileReadThread::run()
 
     while (m_status == Working) {
 
-        //!!! this should be a call out to a function in m_processor
-
         float *newBlock = 0;
 
         try {
@@ -456,12 +462,12 @@ Processor::open(QString filename)
 
     m_stretcher->setMaxProcessSize(m_blockSize);
 
-    m_stretchIn = new float *[m_stretcher->getChannelCount()];
+    m_stretchIn = new float *[m_blocks.channels];
 
-    for (int c = 0; c < (int)m_stretcher->getChannelCount(); ++c) {
+    for (int c = 0; c < m_blocks.channels; ++c) {
         m_stretchIn[c] = new float[m_blockSize];
     }
-    m_stretchOutPtrs = new float *[m_stretcher->getChannelCount()];
+    m_stretchOutPtrs = new float *[m_blocks.channels];
 
     m_fileReadThread = new FileReadThread(this, &m_blocks, m_rs);
     m_fileReadThread->start();
@@ -637,11 +643,18 @@ Processor::getSourceSamples(float *const *samples, int nchannels, int nframes)
         windowSort = 2;
     }
     
-    if (m_windowSort != windowSort ||
-        m_centreFocus != m_lastCentreFocus ||
-        !m_stretcher ||
-        nchannels || m_stretcher->getChannelCount()) {
+    // We always run the stretcher with m_blocks.channels, the channel
+    // count of the source file. But nchannels, the channel count of
+    // the audio device, may differ. We could mix down later after
+    // stretching (though actually we just discard/silence excess
+    // channels).
+
+    if (!m_stretcher ||
+        m_windowSort != windowSort ||
+        m_centreFocus != m_lastCentreFocus) {
+
         delete m_stretcher;
+
         RubberBandStretcher::Options options =
             RubberBandStretcher::OptionProcessRealTime |
             RubberBandStretcher::OptionTransientsCrisp |
@@ -652,7 +665,8 @@ Processor::getSourceSamples(float *const *samples, int nchannels, int nframes)
         if (m_centreFocus) options |= RubberBandStretcher::OptionChannelsTogether;
 
         m_stretcher = new RubberBandStretcher
-            (m_blocks.sampleRate, nchannels, options, timeRatio, pitchScale);
+            (m_blocks.sampleRate, m_blocks.channels,
+             options, timeRatio, pitchScale);
         m_windowSort = windowSort;
     }
 
@@ -665,6 +679,8 @@ Processor::getSourceSamples(float *const *samples, int nchannels, int nframes)
 
     m_lastCentreFocus = m_centreFocus;
 
+    int fileChannels = m_blocks.channels;    
+
     // We de-interleave the audio data and write the input for the
     // stretcher into m_stretchIn.  m_blockSize is an arbitrary size
     // which is both the number of interleaved frames in each block of
@@ -672,11 +688,9 @@ Processor::getSourceSamples(float *const *samples, int nchannels, int nframes)
     // the maximum we can de-interleave and feed in any one chunk.
 
     int done = 0;
-    int fileChannels = m_blocks.channels;
-
     while (done < (int)nframes) {
 
-//        cout << "getSourceSamples: nframes = "<< nframes << ", done = " << done << ", m_processBlock = " << m_processBlock << ", blocks = " << m_blocks.blocks.size() << endl;
+//        cout << "getSourceSamples: nframes = "<< nframes << ", done = " << done << ", m_processBlock = " << m_processBlock << ", blocks = " << m_blocks.blocks.size() << ", m_blockSize = " << m_blockSize << endl;
 
         int available = m_stretcher->available();
         if (available < 0) break;
@@ -721,32 +735,10 @@ Processor::getSourceSamples(float *const *samples, int nchannels, int nframes)
                 m_playing = false;
                 emit playEnded();
             }
-
-            // nchannels is the number of channels required for output
-            // to the audio device. This value came directly from the
-            // device handler, and the stretcher has been configured
-            // with a matching channel count. fileChannels is the
-            // number in the audio file, which may differ. We always
-            // run the stretcher at the audio device channel count.
-
-            for (int c = 0; c < nchannels && c < fileChannels; ++c) {
+            
+            for (int c = 0; c < fileChannels; ++c) {
                 for (int i = 0; i < toProcess; ++i) {
                     m_stretchIn[c][i] = source[(i * fileChannels) + c];
-                }
-            }
-            
-            for (int c = fileChannels; c < nchannels; ++c) {
-                if (c > 0) {
-                    // excess channels on audio output: duplicate the
-                    // first file channel for them (an arbitrary decision)
-                    for (int i = 0; i < toProcess; ++i) {
-                        m_stretchIn[c][i] = m_stretchIn[0][i];
-                    }
-                } else {
-                    // zero channels in the file!
-                    for (int i = 0; i < toProcess; ++i) {
-                        m_stretchIn[c][i] = 0.f;
-                    }
                 }
             }
             
@@ -756,12 +748,14 @@ Processor::getSourceSamples(float *const *samples, int nchannels, int nframes)
         int count = m_stretcher->available();
         if (count == 0) continue;
 
-        if (count > ((int)nframes - done)) count = (int)nframes - done;
+        if (count > ((int)nframes - done)) {
+            count = (int)nframes - done;
+        }
 
         // m_stretchOutPtrs is a set of temporary pointers indicating
         // where to write the output to, as a set of offsets into the
         // desired samples arrays
-        for (int c = 0; c < nchannels; ++c) {
+        for (int c = 0; c < fileChannels && c < nchannels; ++c) {
             m_stretchOutPtrs[c] = samples[c] + done;
         }
 
@@ -769,7 +763,14 @@ Processor::getSourceSamples(float *const *samples, int nchannels, int nframes)
         done += count;
     }
 
-    // any excess should be filled up with zero samples
+    // fill excess channels with zeroes
+    for (int c = fileChannels; c < nchannels; ++c) {
+        for (int i = 0; i < (int)nframes; ++i) {
+            samples[c][i] = 0.f;
+        }
+    }
+    
+    // and fill excess samples with zeroes (should only happen at end of file)
     for (int c = 0; c < nchannels; ++c) {
         for (int i = done; i < (int)nframes; ++i) {
             samples[c][i] = 0.f;

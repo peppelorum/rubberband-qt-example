@@ -46,6 +46,7 @@ public:
     void cancelFileLoad();
 
     QString getFilename() const;
+    QString getTrackName() const;
     
     int getSampleRate() const;
     int getChannelCount() const;
@@ -110,6 +111,7 @@ public slots:
 
 protected:
     QString m_filename;
+    QString m_trackName;
 
     breakfastquay::SystemPlaybackTarget *m_target;
     RubberBand::RubberBandStretcher *m_stretcher;
@@ -120,7 +122,7 @@ protected:
 
     mutable QMutex m_mutex;
 
-    int m_blockSize;
+    const int m_blockSize;
 
     struct BlockRec {
         BlockRec(int rate, int c, int bs) :
