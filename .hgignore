@@ -1,0 +1,9 @@
+syntax: glob
+.repoint*
+*.o
+moc_*
+*~
+.qmake.stash
+Example
+Makefile
+ext
