@@ -165,8 +165,6 @@ protected:
     static int getTotalAudioBlocks(const BlockRec &);
     static int getTotalAudioFrames(const BlockRec &);
 
-    int getAndUpdateBlockNo(bool &lastBlock, bool &playEnded);
-    
     class FileReadThread : public QThread
     {
     public:

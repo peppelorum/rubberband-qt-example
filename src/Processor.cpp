@@ -701,16 +701,9 @@ Processor::getSourceSamples(float *const *samples, int nchannels, int nframes)
         
             int toProcess = m_blockSize;
 
-            bool lastBlock = false;
-            bool ended = false;
-            int block = getAndUpdateBlockNo(lastBlock, ended);
+            int block = m_processBlock;
+            ++m_processBlock;
 
-            if (ended) {
-                m_playing = false;
-                emit playEnded();
-                break;
-            }
-            
             float *source = 0;
 
             m_blocks.mutex.lock();
@@ -720,13 +713,15 @@ Processor::getSourceSamples(float *const *samples, int nchannels, int nframes)
                 emit playEnded();
                 break;
             }
-            if (block >= (int)m_blocks.blocks.size()) {
-                block = m_blocks.blocks.size() - 1;
+            int n = (int)m_blocks.blocks.size();
+            if (block >= n) {
+                block = n - 1;
             }
             if (block < 0) {
                 block = 0;
             }
             source = m_blocks.blocks[block];
+            bool lastBlock = (block + 1 == n);
             int lastBlockFill = m_blocks.lastBlockFill;
             m_blocks.mutex.unlock();
 
@@ -780,29 +775,5 @@ Processor::getSourceSamples(float *const *samples, int nchannels, int nframes)
     m_mutex.unlock();
 
     return nframes;
-}
-
-int
-Processor::getAndUpdateBlockNo(bool &lastBlock, bool &ended)
-{
-    int block = m_processBlock;
-        
-    lastBlock = false;
-    ended = false;
-    
-    m_blocks.mutex.lock();
-
-    int n = (int)m_blocks.blocks.size();
-    
-    ++m_processBlock;
-
-    lastBlock = (block+1 >= n);
-
-    if (lastBlock) {
-        m_processBlock = 0;
-    }
-    m_blocks.mutex.unlock();
-
-    return block;
 }
 
