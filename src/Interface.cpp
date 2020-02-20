@@ -34,14 +34,23 @@ Interface::Interface(Processor *p, QWidget *parent) :
     auto pause = new QPushButton(tr("||"));
     mainLayout->addWidget(pause, 0, 3);
 
+    auto speed = new QDoubleSpinBox;
+    speed->setMinimum(0.1);
+    speed->setMaximum(100.0);
+    speed->setValue(1.0);
+    speed->setDecimals(2);
+    speed->setSingleStep(0.1);
+    mainLayout->addWidget(speed, 0, 4);
+
     connect(open, SIGNAL(clicked()), this, SLOT(open()));
     connect(rewind, SIGNAL(clicked()), this, SLOT(rewind()));
     connect(play, SIGNAL(clicked()), this, SLOT(play()));
     connect(pause, SIGNAL(clicked()), this, SLOT(pause()));
+    connect(speed, SIGNAL(valueChanged(double)), this, SLOT(speedChanged(double)));
 
     m_filenameLabel = new QLabel;
     m_filenameLabel->setText(tr("<no file loaded>"));
-    mainLayout->addWidget(m_filenameLabel, 1, 0, 1, 4);
+    mainLayout->addWidget(m_filenameLabel, 1, 0, 1, 5);
 
     setCentralWidget(mainFrame);
 }
@@ -102,23 +111,10 @@ Interface::rewind()
 {
     m_processor->rewind();
 }
-/*
-void
-Interface::speedUp()
-{
-    int v = m_speed->value();
-    v = (v/2) * 2 + 2; // target is always even
-    m_speed->setValue(v);
-    speedChange(m_speed->value());
-}
 
 void
-Interface::slowDown()
+Interface::speedChanged(double ratio)
 {
-    int v = m_speed->value();
-    v = (v/2) * 2 - 2; // target is always even
-    m_speed->setValue(v);
-    speedChange(m_speed->value());
+    m_processor->setTimeRatio(ratio);
 }
-*/
 

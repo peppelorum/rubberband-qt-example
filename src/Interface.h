@@ -31,12 +31,10 @@ protected slots:
     void play();
     void pause();
     void rewind();
-//    void speedUp();
-//    void slowDown();
+    void speedChanged(double);
     
 private:
     Processor *m_processor;
-    QDoubleSpinBox *m_speedSpin;
     QLabel *m_filenameLabel;
 };
 
