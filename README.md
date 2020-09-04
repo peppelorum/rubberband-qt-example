@@ -1,6 +1,5 @@
 
-Rubber Band Qt Example
-======================
+# Rubber Band Qt Example
 
 A mini Qt-based UI that can load an audio file and adjust its playback
 speed dynamically.
