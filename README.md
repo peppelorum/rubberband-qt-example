@@ -5,7 +5,7 @@ A mini Qt-based UI that can load an audio file and adjust its playback
 speed dynamically.
 
 This is actually a very, very cut-down version of code used in the
-Rubber Band Audio application (https://rubberbandaudio.com/).
+Rubber Band Audio application, https://rubberbandaudio.com/ .
 
 To build:
 
