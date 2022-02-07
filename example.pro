@@ -1,4 +1,3 @@
-
 TEMPLATE = app
 
 QT += gui widgets
@@ -10,7 +9,10 @@ TARGET = "Example"
 DEFINES += USE_SPEEX USE_KISSFFT
 
 INCLUDEPATH += \
+	/usr/include/ \
+	/usr/lib/arm-linux-gnueabihf/ \
         ext/rubberband \
+	ext/rubberband/rubberband \
         ext/rubberband/src \
         ext/bqresample \
         ext/bqvec \
@@ -20,7 +22,7 @@ INCLUDEPATH += \
         ext/bqaudiostream \
         ext/bqaudiostream/bqaudiostream \
         ext/bqthingfactory
-        
+
 RB_SOURCES += \
       	ext/rubberband/src/RubberBandStretcher.cpp \
 	ext/rubberband/src/StretcherProcess.cpp \
@@ -44,6 +46,10 @@ RB_SOURCES += \
 	ext/rubberband/src/kissfft/kiss_fft.c \
 	ext/rubberband/src/kissfft/kiss_fftr.c
 
+B_SOURCES = \
+        ext/rubberband/src/RubberBandStretcher.cpp \
+	ext/rubberband/src/StretcherImpl.cpp \
+
 BQ_SOURCES += \
 	ext/bqvec/src/Allocators.cpp \
 	ext/bqvec/src/Barrier.cpp \
@@ -61,16 +67,16 @@ BQ_SOURCES += \
         ext/bqaudiostream/src/AudioReadStream.cpp \
         ext/bqaudiostream/src/AudioReadStreamFactory.cpp \
         ext/bqaudiostream/src/AudioStreamExceptions.cpp
-        
+
 win32-msvc* {
     DEFINES += HAVE_PORAUDIO HAVE_MEDIAFOUNDATION _USE_MATH_DEFINES
     LIBS += -lportaudio -lmfplat -lmfreadwrite -lmfuuid -lpropsys -ladvapi32 -lwinmm -lws2_32
 }
 
-macx* {
-    DEFINES += HAVE_COREAUDIO HAVE_PORTAUDIO HAVE_VDSP USE_PTHREADS
-    LIBS += -lportaudio -framework CoreAudio -framework CoreMidi -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Accelerate
-}
+#macx* {
+#    DEFINES += HAVE_COREAUDIO HAVE_PORTAUDIO HAVE_VDSP USE_PTHREADS
+#    LIBS += -lportaudio -framework CoreAudio -framework CoreMidi -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Accelerate
+#}
 
 linux* {
     DEFINES += HAVE_SNDFILE HAVE_LIBPULSE USE_PTHREADS
@@ -88,4 +94,3 @@ SOURCES += \
         src/Interface.cpp \
         src/Processor.cpp \
         src/main.cpp
-        
