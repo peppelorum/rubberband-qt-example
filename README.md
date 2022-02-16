@@ -9,6 +9,14 @@ playback speed dynamically.
 This is actually a very, very cut-down version of code used in the
 Rubber Band Audio application, https://rubberbandaudio.com/ .
 
+
+Libraries needed (atleast these):
+
+libpulse-dev
+libaubio-dev
+libsndfile1-dev
+libfftw3-dev
+
 To build:
 
 ```
