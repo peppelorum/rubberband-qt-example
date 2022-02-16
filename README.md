@@ -12,10 +12,10 @@ Rubber Band Audio application, https://rubberbandaudio.com/ .
 
 Libraries needed (atleast these):
 
-libpulse-dev
-libaubio-dev
-libsndfile1-dev
-libfftw3-dev
+* libpulse-dev
+* libaubio-dev
+* libsndfile1-dev
+* libfftw3-dev
 
 To build:
 
